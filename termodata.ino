@@ -40,6 +40,11 @@ int buttonMinus = 0;
 int modecount = 0;
 int minutecount = 0;
 
+unsigned long lastDebounceTime = 0;
+unsigned long currentDebounceTime = 0;
+unsigned long debounceDelay = 50; 
+
+///
 String variableContainer = "";
 int SDVariableContainer = 0;
 
@@ -59,27 +64,39 @@ void changeNumber(int action) {
     modevariable[modecount] = modevariable[modecount] - 10;
       }
     /////////////////////////
+    // set Debounce
+    lastDebounceTime = millis();   
+}
+// write to SD cart
+void dataWriter(){
 
-    SD.remove(modename[modecount]);
-    myFile = SD.open(modename[modecount] , FILE_WRITE);
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+      
+            SD.remove(modename[modecount]);
+            myFile = SD.open(modename[modecount] , FILE_WRITE);
+        
+            // if the file opened okay, write to it:
+        
+            if (myFile) {
+              Serial.print(modevariable[modecount]);
+              Serial.print("Writing to test.txt...");
+        
+              myFile.print(modevariable[modecount]);
+              // close the file:
+              myFile.close();
+              Serial.println("done.");
+              Serial.println(millis());
+            } else {
+              // if the file didn't open, print an error:
+              Serial.println("error opening test.txt");
+            }
+      }
+}
 
-    // if the file opened okay, write to it:
 
-    if (myFile) {
-      Serial.print(modevariable[modecount]);
-      Serial.print("Writing to test.txt...");
-
-      myFile.print(modevariable[modecount]);
-      // close the file:
-      myFile.close();
-      Serial.println("done.");
-      Serial.println(millis());
-    } else {
-      // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
-    }
     /////////////////////
-
+// show to LCD
+void LCDShow(){
     lcd.clear();
     lcd.backlight();
     lcd.print(modename[modecount]);
@@ -303,10 +320,14 @@ void loop()
   // plus
   if (buttonPlus == HIGH) {
     changeNumber(1);
+    dataWriter();
+    LCDShow();
   }
   // minus
   if (buttonMinus == HIGH) {
     changeNumber(0);
+    dataWriter();
+    LCDShow();
   }
   else {
     lcd.backlight();
