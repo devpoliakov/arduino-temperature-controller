@@ -49,6 +49,7 @@ String variableContainer = "";
 int SDVariableContainer = 0;
 
 char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt"};
+char* humanModename[] = {"work: ", "time", "t*", "time(2)", "t*(2)"};
 int modevariable[] = {0, 0, 0, 0, 0};
 
 int saverCount = 1;
@@ -86,7 +87,7 @@ uint8_t i;
 float average;
 // сводим показания в вектор с небольшой задержкой между снятием показаний
 for (i=0; i< NUMSAMPLES; i++) {
-samples[i] = analogRead(THERMISTORPIN);
+samples[i] = fromSensorValue;
 delay(10);  
 }
 
@@ -115,21 +116,30 @@ steinhart = 1.0 / steinhart; // инвертируем
 steinhart -= 273.15; // конвертируем в градусы по Цельсию
 //Serial.print("Temperature ");
 lcd.print(steinhart);
-lcd.print(" *C");
-delay(1000);
-  }
+lcd.print("*C, ");
+
+}
 // END of Steinhart–Hart_equation void
 
 // plus/minus
 
 
-void changeNumber(int action) {
-  
-  if(action == 1){
-    modevariable[modecount] = modevariable[modecount] + 10;
+void changeNumber(int action, int modecount) {
+// for temperature mode
+  if(modecount == 2 or modecount == 4){
+  if(action == 1 ){
+    modevariable[modecount] = modevariable[modecount] - 5;
     } else if(action == 0){
-    modevariable[modecount] = modevariable[modecount] - 10;
+    modevariable[modecount] = modevariable[modecount] + 5;
       }
+    
+    }else{
+  if(action == 1 ){
+    modevariable[modecount] = modevariable[modecount] + 5;
+    } else if(action == 0){
+    modevariable[modecount] = modevariable[modecount] - 5;
+      }
+    }
     /////////////////////////
     // set Debounce
     lastDebounceTime = millis();   
@@ -166,9 +176,15 @@ void dataWriter(){
 void LCDShow(){
     lcd.clear();
     lcd.backlight();
-    lcd.print(modename[modecount]);
+    lcd.print(humanModename[modecount]);
+    lcd.print(": ");
     lcd.backlight();
+    if(modecount == 2 
+    or modecount == 4 ){
+     realTemperature(modevariable[modecount]);
+      }else{
     lcd.print(modevariable[modecount]);
+      }
 
     //////////////////////////////////
 
@@ -234,7 +250,7 @@ void setup()
   // Turn on the blacklight and print a message.
   lcd.clear();
   lcd.backlight();
-  lcd.print(modename[modecount]);
+  lcd.print(humanModename[modecount]);
 
 }
 
@@ -272,7 +288,6 @@ void loop()
       realTemperature(sensorValue);
 
       lcd.backlight();
-      lcd.println("t1: ");
       lcd.print(modevariable[1]);
 
 
@@ -319,10 +334,8 @@ void loop()
       lcd.clear();
       lcd.backlight();
       //lcd.print("temp: ");
-      lcd.print(sensorValue);
-
+      realTemperature(sensorValue);
       lcd.backlight();
-      lcd.println("t1: ");
       lcd.print(modevariable[3]);
 
 
@@ -377,22 +390,33 @@ void loop()
 
     lcd.clear();
     lcd.backlight();
-    lcd.print(modename[modecount]);
+    
+    
+    if(modecount == 2 
+    or modecount == 4 ){
+      lcd.print(humanModename[modecount]);
+      lcd.print(": ");
+      lcd.backlight();
+     realTemperature(modevariable[modecount]);
+      }else{
+    lcd.print(humanModename[modecount]);
+    lcd.print(": ");
     lcd.backlight();
     lcd.print(modevariable[modecount]);
+      }
     delay(500);
   }
 // end of mode select
 
   // plus
   if (buttonPlus == HIGH) {
-    changeNumber(1);
+    changeNumber(1, modecount);
     dataWriter();
     LCDShow();
   }
   // minus
   if (buttonMinus == HIGH) {
-    changeNumber(0);
+    changeNumber(0, modecount);
     dataWriter();
     LCDShow();
   }
