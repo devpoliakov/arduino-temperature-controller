@@ -52,9 +52,76 @@ char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt"
 int modevariable[] = {0, 0, 0, 0, 0};
 
 int saverCount = 1;
+
+// Steinhart–Hart_equation variables
+#define THERMISTORPIN A0
+// R for 25 degrees
+#define THERMISTORNOMINAL 10000
+
+// temp. nominal
+#define TEMPERATURENOMINAL 25
+
+// numbers of tops for middle Temperature
+#define NUMSAMPLES 5
+
+// beta coefficient (usually 3000-4000)
+#define BCOEFFICIENT 3950
+
+// R2
+#define SERIESRESISTOR 220
+
+int samples[NUMSAMPLES];
+// END of Steinhart–Hart_equation variables
+
 //////
+/// void real temperature
+
+void realTemperature(int fromSensorValue){
+  /*
+  float voltage = fromSensorValue * (5.0 / 1023.0);
+  //lcd.print(voltage);
+*/
+
+uint8_t i;
+float average;
+// сводим показания в вектор с небольшой задержкой между снятием показаний
+for (i=0; i< NUMSAMPLES; i++) {
+samples[i] = analogRead(THERMISTORPIN);
+delay(10);  
+}
+
+// рассчитываем среднее значение
+average = 0;
+for (i=0; i< NUMSAMPLES; i++) {
+average += samples[i];
+}
+average /= NUMSAMPLES;
+Serial.print("Average analog reading ");
+Serial.println(average);
+
+
+// конвертируем значение в сопротивление
+average = 1023 / average - 1;
+average = SERIESRESISTOR / average;
+Serial.print("Thermistor resistance ");
+Serial.println(average);
+float steinhart;
+steinhart = average / THERMISTORNOMINAL; // (R/Ro)
+steinhart = log(steinhart); // ln(R/Ro)
+steinhart /= BCOEFFICIENT; // 1/B * ln(R/Ro)
+steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
+steinhart = 1.0 / steinhart; // инвертируем
+
+steinhart -= 273.15; // конвертируем в градусы по Цельсию
+//Serial.print("Temperature ");
+lcd.print(steinhart);
+lcd.print(" *C");
+delay(1000);
+  }
+// END of Steinhart–Hart_equation void
+
 // plus/minus
-/////
+
 
 void changeNumber(int action) {
   
@@ -202,7 +269,7 @@ void loop()
       lcd.clear();
       lcd.backlight();
       //lcd.print("temp: ");
-      lcd.print(sensorValue);
+      realTemperature(sensorValue);
 
       lcd.backlight();
       lcd.println("t1: ");
