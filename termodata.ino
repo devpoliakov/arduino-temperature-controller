@@ -97,15 +97,18 @@ for (i=0; i< NUMSAMPLES; i++) {
 average += samples[i];
 }
 average /= NUMSAMPLES;
+/*
 Serial.print("Average analog reading ");
 Serial.println(average);
-
+*/
 
 // конвертируем значение в сопротивление
 average = 1023 / average - 1;
 average = SERIESRESISTOR / average;
+/*
 Serial.print("Thermistor resistance ");
 Serial.println(average);
+*/
 float steinhart;
 steinhart = average / THERMISTORNOMINAL; // (R/Ro)
 steinhart = log(steinhart); // ln(R/Ro)
@@ -128,9 +131,9 @@ void changeNumber(int action, int modecount) {
 // for temperature mode
   if(modecount == 2 or modecount == 4){
   if(action == 1 ){
-    modevariable[modecount] = modevariable[modecount] - 5;
+    modevariable[modecount] = modevariable[modecount] - 1;
     } else if(action == 0){
-    modevariable[modecount] = modevariable[modecount] + 5;
+    modevariable[modecount] = modevariable[modecount] + 1;
       }
     
     }else{
@@ -141,11 +144,17 @@ void changeNumber(int action, int modecount) {
       }
     }
     /////////////////////////
-    // set Debounce
-    lastDebounceTime = millis();   
+     
 }
 // write to SD cart
 void dataWriter(){
+// debug monitoring
+Serial.print("lastDebounceTime: ");
+Serial.println(lastDebounceTime);
+Serial.print("millis: ");
+Serial.println(millis());
+Serial.print("debounceDelay: ");
+Serial.println(debounceDelay);
 
   if ((millis() - lastDebounceTime) > debounceDelay) {
       
@@ -167,6 +176,9 @@ void dataWriter(){
               // if the file didn't open, print an error:
               Serial.println("error opening test.txt");
             }
+
+            // set last Debounce
+          lastDebounceTime = millis();  
       }
 }
 
@@ -274,7 +286,7 @@ void loop()
 
 
   if ((WorkMode == 0) ) {
-    Serial.println(WorkMode);
+    //Serial.println(WorkMode);
   }  else {
     // detect Time
     // first mode
