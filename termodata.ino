@@ -48,9 +48,9 @@ unsigned long debounceDelay = 50;
 String variableContainer = "";
 int SDVariableContainer = 0;
 
-char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt", "Areserv.txt", "Breserv.txt"};
-char* humanModename[] = {"work: ", "time", "t*", "time(2)", "t*(2)", "Res*", "Res(2)*"};
-int modevariable[] = {0, 0, 0, 0, 0};
+char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt", "AFTemp.txt", "BFTemp.txt"};
+char* humanModename[] = {"work: ", "time", "ts*", "time2", "ts2*", "tf*", "tf2*"};
+int modevariable[] = {0, 0, 0, 0, 0, 0, 0};
 
 int saverCount = 1;
 
@@ -131,6 +131,8 @@ void changeNumber(int action, int modecount) {
 // for temperature mode
   if(modecount == 2 
   or modecount == 4
+  or modecount == 5
+  or modecount == 6
 ){
   if(action == 1 ){
     modevariable[modecount] = modevariable[modecount] - 1;
@@ -138,7 +140,8 @@ void changeNumber(int action, int modecount) {
     modevariable[modecount] = modevariable[modecount] + 1;
       }
     
-    }else{
+    }
+ else{
   if(action == 1 ){
     modevariable[modecount] = modevariable[modecount] + 5;
     } else if(action == 0){
@@ -194,7 +197,9 @@ void LCDShow(){
     lcd.print(": ");
     lcd.backlight();
     if(modecount == 2 
-    or modecount == 4){
+    or modecount == 4
+    or modecount == 5 
+    or modecount == 6){
      realTemperature(modevariable[modecount]);
       }else{
     lcd.print(modevariable[modecount]);
@@ -247,13 +252,15 @@ void setup()
       modevariable[saverCount] = SDVariableContainer;
       Serial.print(modevariable[saverCount]);
       Serial.println('-');
-
+      
 
       // set saved data to loop
 
     }
 
   }
+
+  Serial.println(analogRead(A0));
   //////////////////////////////
 
   pinMode(9, OUTPUT);
@@ -280,7 +287,6 @@ void loop()
   int sensorValue = analogRead(A0);
   int termocounter = 0;
 
-  //digitalWrite(9, LOW);
   /**
     main loop
   */
@@ -289,19 +295,23 @@ void loop()
 
   if ((WorkMode == 0) ) {
     //Serial.println(WorkMode);
-  }  else {
     // disable relay
-        digitalWrite(9, LOW);
+    digitalWrite(9, HIGH);
+  }  else {
+    
+
         
     // detect Time
+    //////////
     // first mode
-    if (modevariable[1] > 1) {
+    //////////
+    if (modevariable[1] >= 1) {
       ///////////////////////
       /// visual part
       ///////////////////////
       lcd.clear();
       lcd.backlight();
-      //lcd.print("temp: ");
+      lcd.print("A: ");
       realTemperature(sensorValue);
 
       lcd.backlight();
@@ -311,14 +321,27 @@ void loop()
       ///////////////////////
       //sensor part
 
-      if (modevariable[2] < sensorValue) {
-        digitalWrite(9, HIGH);
+      if ((modevariable[2] < sensorValue) ) {
+       if( sensorValue < modevariable[5]){
+       digitalWrite(9, HIGH);
+       //Serial.println("do not go heart");
+       } else{
+        //enable relay
+        digitalWrite(9, LOW);
+        /*
+        Serial.println("go heart");
+        Serial.print(modevariable[2]);
+        Serial.print("/");
+        Serial.println(modevariable[5]);
+        Serial.println(sensorValue);
+        */
       }
-      else if ((modevariable[2] > sensorValue) and (sensorValue > (modevariable[2] - modevariable[5])) ) {
-
+      }
+      else  {
+      Serial.println("WorkMode");
 
         // disable relay
-        digitalWrite(9, LOW);
+        digitalWrite(9, HIGH);
         // start counter
         minutecount++;
         if (minutecount == 60) {
@@ -339,19 +362,20 @@ void loop()
       }
 
     }
+  // end of first mode
 
-
-
-    // detect Time
-    // Second mode
-    else if (modevariable[3] > 1) {
+    //////////
+    // second mode
+    //////////
+else if (modevariable[3] >= 1) {
       ///////////////////////
       /// visual part
       ///////////////////////
       lcd.clear();
       lcd.backlight();
-      //lcd.print("temp: ");
+      lcd.print("B: ");
       realTemperature(sensorValue);
+
       lcd.backlight();
       lcd.print(modevariable[3]);
 
@@ -359,14 +383,27 @@ void loop()
       ///////////////////////
       //sensor part
 
-      if (modevariable[4] < sensorValue) {
-        digitalWrite(9, HIGH);
+      if ((modevariable[4] < sensorValue) ) {
+       if( sensorValue < modevariable[6]){
+       digitalWrite(9, HIGH);
+       //Serial.println("do not go heart");
+       } else{
+        //enable relay
+        digitalWrite(9, LOW);
+        /*
+        Serial.println("go heart");
+        Serial.print(modevariable[4]);
+        Serial.print("/");
+        Serial.println(modevariable[6]);
+        Serial.println(sensorValue);
+        */
       }
-      else if ((modevariable[4] > sensorValue) and (sensorValue > (modevariable[4] - modevariable[6])) ) {
-
+      }
+      else  {
+      Serial.println("WorkMode");
 
         // disable relay
-        digitalWrite(9, LOW);
+        digitalWrite(9, HIGH);
         // start counter
         minutecount++;
         if (minutecount == 60) {
@@ -387,9 +424,17 @@ void loop()
       }
 
     }
-    else {
-      digitalWrite(9, LOW);
-    }
+  // end of second mode
+// if time gone
+else {
+      lcd.clear();
+      //lcd.backlight();
+      lcd.print("Done! t: ");
+      realTemperature(sensorValue);
+  }
+    // detect Time
+    // Second mode
+
     //////////////////////
     delay(1000);
   }
@@ -410,7 +455,9 @@ void loop()
     
     
     if(modecount == 2 
-    or modecount == 4 ){
+    or modecount == 4
+    or modecount == 5
+    or modecount == 6){
       lcd.print(humanModename[modecount]);
       lcd.print(": ");
       lcd.backlight();
