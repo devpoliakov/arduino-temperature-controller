@@ -48,8 +48,8 @@ unsigned long debounceDelay = 50;
 String variableContainer = "";
 int SDVariableContainer = 0;
 
-char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt"};
-char* humanModename[] = {"work: ", "time", "t*", "time(2)", "t*(2)"};
+char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt", "Areserv.txt", "Breserv.txt"};
+char* humanModename[] = {"work: ", "time", "t*", "time(2)", "t*(2)", "Res*", "Res(2)*"};
 int modevariable[] = {0, 0, 0, 0, 0};
 
 int saverCount = 1;
@@ -129,7 +129,11 @@ lcd.print("*C, ");
 
 void changeNumber(int action, int modecount) {
 // for temperature mode
-  if(modecount == 2 or modecount == 4){
+  if(modecount == 2 
+  or modecount == 4
+  //reserv temperature
+  or modecount == 5
+  or modecount == 6){
   if(action == 1 ){
     modevariable[modecount] = modevariable[modecount] - 1;
     } else if(action == 0){
@@ -192,7 +196,7 @@ void LCDShow(){
     lcd.print(": ");
     lcd.backlight();
     if(modecount == 2 
-    or modecount == 4 ){
+    or modecount == 4){
      realTemperature(modevariable[modecount]);
       }else{
     lcd.print(modevariable[modecount]);
@@ -232,7 +236,7 @@ void setup()
 
 
   // re-open the file for reading:
-  for (saverCount = 1; saverCount < 5; saverCount++) {
+  for (saverCount = 1; saverCount < 7; saverCount++) {
     variableContainer = "";
     myFile = SD.open(modename[saverCount]);
     if (myFile) {
@@ -288,6 +292,9 @@ void loop()
   if ((WorkMode == 0) ) {
     //Serial.println(WorkMode);
   }  else {
+    // disable relay
+        digitalWrite(9, LOW);
+        
     // detect Time
     // first mode
     if (modevariable[1] > 1) {
@@ -309,7 +316,7 @@ void loop()
       if (modevariable[2] < sensorValue) {
         digitalWrite(9, HIGH);
       }
-      else if ((modevariable[2] > sensorValue) and (sensorValue > (modevariable[2] - variableTemperaturePlus)) ) {
+      else if ((modevariable[2] > sensorValue) and (sensorValue > (modevariable[2] - modevariable[5])) ) {
 
 
         // disable relay
@@ -357,7 +364,7 @@ void loop()
       if (modevariable[4] < sensorValue) {
         digitalWrite(9, HIGH);
       }
-      else if ((modevariable[4] > sensorValue) and (sensorValue > (modevariable[4] - variableTemperaturePlus)) ) {
+      else if ((modevariable[4] > sensorValue) and (sensorValue > (modevariable[4] - modevariable[6])) ) {
 
 
         // disable relay
