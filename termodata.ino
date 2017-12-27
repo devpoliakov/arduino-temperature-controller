@@ -131,9 +131,7 @@ void changeNumber(int action, int modecount) {
 // for temperature mode
   if(modecount == 2 
   or modecount == 4
-  //reserv temperature
-  or modecount == 5
-  or modecount == 6){
+){
   if(action == 1 ){
     modevariable[modecount] = modevariable[modecount] - 1;
     } else if(action == 0){
@@ -400,7 +398,7 @@ void loop()
   if (buttonSelect == HIGH) {
     modecount++;
     //reset mode name
-    if (modecount == 5) {
+    if (modecount == 7) {
       modecount = 0;
       WorkMode = 1;
     } else {
