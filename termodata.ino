@@ -48,6 +48,8 @@ unsigned long debounceDelay = 50;
 String variableContainer = "";
 int SDVariableContainer = 0;
 
+
+
 char* modename[] = {"work: ", "AMode.txt", "ATemp.txt", "BMode.txt", "BTemp.txt", "AFTemp.txt", "BFTemp.txt"};
 char* humanModename[] = {"work: ", "time", "ts*", "time2", "ts2*", "tf*", "tf2*"};
 int modevariable[] = {0, 0, 0, 0, 0, 0, 0};
@@ -73,6 +75,10 @@ int saverCount = 1;
 
 int samples[NUMSAMPLES];
 // END of Steinhart–Hart_equation variables
+
+// period betwen ts and t
+int goPeriod = 0;
+
 
 //////
 /// void real temperature
@@ -212,7 +218,26 @@ void LCDShow(){
 /// end of void
 ///////////
 
-
+//////
+// counter void
+void counterus(int currentTimeVariable){
+minutecount++;
+        if (minutecount == 60) {
+          minutecount = 0;
+          /////////////////////
+          // remove  function
+          modevariable[currentTimeVariable] = modevariable[currentTimeVariable] - 1;
+          SD.remove(modename[currentTimeVariable]);
+          myFile = SD.open(modename[currentTimeVariable] , FILE_WRITE);
+          if (myFile) {
+            myFile.print(modevariable[currentTimeVariable]);
+            // close the file:
+            myFile.close();
+          }
+          ///////////////////
+        }
+}
+// end of counter void
 
 void setup()
 {
@@ -321,11 +346,8 @@ void loop()
       ///////////////////////
       //sensor part
 
-      if ((modevariable[2] < sensorValue) ) {
-       if( sensorValue < modevariable[5]){
-       digitalWrite(9, HIGH);
-       //Serial.println("do not go heart");
-       } else{
+      if ((modevariable[5] < sensorValue) && goPeriod == 0 ) {
+       
         //enable relay
         digitalWrite(9, LOW);
         /*
@@ -335,30 +357,28 @@ void loop()
         Serial.println(modevariable[5]);
         Serial.println(sensorValue);
         */
+        if(modevariable[2] > sensorValue){
+        // counter void
+        counterus(1);
+        // end counter void
+        }
+      Serial.println("go heart");
       }
-      }
+      ////////////
       else  {
       Serial.println("WorkMode");
-
+        
+        goPeriod = 1;
+        if (modevariable[2] < sensorValue){
+        goPeriod = 0;
+        Serial.println("!goPeriod = 0");
+        }
         // disable relay
         digitalWrite(9, HIGH);
         // start counter
-        minutecount++;
-        if (minutecount == 60) {
-          minutecount = 0;
-          /////////////////////
-          // remove  function
-          modevariable[1] = modevariable[1] - 1;
-          SD.remove(modename[1]);
-          myFile = SD.open(modename[1] , FILE_WRITE);
-          if (myFile) {
-            myFile.print(modevariable[1]);
-            // close the file:
-            myFile.close();
-          }
-          ///////////////////
-        }
-
+        // counter void
+        counterus(1);
+        // end counter void
       }
 
     }
@@ -383,43 +403,39 @@ else if (modevariable[3] >= 1) {
       ///////////////////////
       //sensor part
 
-      if ((modevariable[4] < sensorValue) ) {
-       if( sensorValue < modevariable[6]){
-       digitalWrite(9, HIGH);
-       //Serial.println("do not go heart");
-       } else{
+      if ((modevariable[6 ] < sensorValue) && goPeriod == 0 ) {
+       
         //enable relay
         digitalWrite(9, LOW);
         /*
         Serial.println("go heart");
-        Serial.print(modevariable[4]);
+        Serial.print(modevariable[2]);
         Serial.print("/");
-        Serial.println(modevariable[6]);
+        Serial.println(modevariable[5]);
         Serial.println(sensorValue);
         */
-      }
+        // start counter during relay on
+        if(modevariable[4] > sensorValue){
+        // counter void
+        counterus(3);
+        // end counter void
+        }
+        
+      Serial.println("go heart");
       }
       else  {
       Serial.println("WorkMode");
-
+        goPeriod = 1;
+        if (modevariable[4] < sensorValue){
+        goPeriod = 0;
+        Serial.println("!goPeriod = 0");
+        }
         // disable relay
         digitalWrite(9, HIGH);
         // start counter
-        minutecount++;
-        if (minutecount == 60) {
-          minutecount = 0;
-          /////////////////////
-          // remove  function
-          modevariable[3] = modevariable[3] - 1;
-          SD.remove(modename[3]);
-          myFile = SD.open(modename[3] , FILE_WRITE);
-          if (myFile) {
-            myFile.print(modevariable[3]);
-            // close the file:
-            myFile.close();
-          }
-          ///////////////////
-        }
+        // counter void
+        counterus(3);
+        // end counter void
 
       }
 
@@ -431,6 +447,9 @@ else {
       //lcd.backlight();
       lcd.print("Done! t: ");
       realTemperature(sensorValue);
+
+      // disable relay
+        digitalWrite(9, HIGH);
   }
     // detect Time
     // Second mode
